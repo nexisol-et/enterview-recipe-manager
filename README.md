@@ -15,19 +15,19 @@ This application follows a clean layered architecture:
 
 ### Prerequisites
 - Node.js 18+ 
-- npm or yarn
+- pnpm or yarn
 
 ### Installation
 
 1. Clone or download the project
 2. Install dependencies:
    \`\`\`bash
-   npm install
+   pnpm install
    \`\`\`
 
 3. Run the development server:
    \`\`\`bash
-   npm run dev
+   pnpm dev
    \`\`\`
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
