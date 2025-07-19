@@ -1,26 +1,47 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import type { Recipe } from "@/types/recipe"
 import RecipeCard from "./recipe-card"
 import SearchBar from "./search-bar"
 import { Loader2 } from "lucide-react"
 
 export default function RecipeList() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [initialized, setInitialized] = useState(false)
 
-  const fetchRecipes = useCallback(async (search?: string, category?: string) => {
+  // Initialize state from URL parameters only once
+  useEffect(() => {
+    if (!initialized) {
+      const urlQuery = searchParams.get("search") || ""
+      const urlCategory = searchParams.get("category") || "all"
+      setSearchQuery(urlQuery)
+      setSelectedCategory(urlCategory)
+      setInitialized(true)
+    }
+  }, [searchParams, initialized])
+
+  // Fetch recipes when search parameters change (but only after initialization)
+  useEffect(() => {
+    if (initialized) {
+      fetchRecipes()
+    }
+  }, [searchQuery, selectedCategory, initialized])
+
+  const fetchRecipes = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
 
-      if (search) params.set("search", search)
-      if (category && category !== "all") params.set("category", category)
+      if (searchQuery) params.set("search", searchQuery)
+      if (selectedCategory && selectedCategory !== "all") params.set("category", selectedCategory)
 
       const url = params.toString() ? `/api/recipes?${params.toString()}` : "/api/recipes"
       const response = await fetch(url)
@@ -34,30 +55,26 @@ export default function RecipeList() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
-  // Initialize from URL parameters
-  useEffect(() => {
-    const urlSearch = searchParams.get("search") || ""
-    const urlCategory = searchParams.get("category") || "all"
+  const updateURL = (query: string, category: string) => {
+    const params = new URLSearchParams()
+    if (query) params.set("search", query)
+    if (category && category !== "all") params.set("category", category)
 
-    setSearchQuery(urlSearch)
-    setCategoryFilter(urlCategory)
-    fetchRecipes(urlSearch, urlCategory)
-  }, [searchParams, fetchRecipes])
+    const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname
+    router.replace(newURL, { scroll: false })
+  }
 
-  const handleSearch = useCallback(
-    (query: string, category: string) => {
-      setSearchQuery(query)
-      setCategoryFilter(category)
-      fetchRecipes(query, category)
-    },
-    [fetchRecipes],
-  )
+  const handleSearch = (query: string, category: string) => {
+    setSearchQuery(query)
+    setSelectedCategory(category)
+    updateURL(query, category)
+  }
 
-  const handleRecipeDeleted = useCallback(() => {
-    fetchRecipes(searchQuery, categoryFilter)
-  }, [fetchRecipes, searchQuery, categoryFilter])
+  const handleRecipeDeleted = () => {
+    fetchRecipes()
+  }
 
   if (loading) {
     return (
@@ -69,19 +86,24 @@ export default function RecipeList() {
   }
 
   const getEmptyStateMessage = () => {
-    if (searchQuery && categoryFilter !== "all") {
-      return `No recipes found matching "${searchQuery}" in ${categoryFilter} category.`
+    if (searchQuery && selectedCategory !== "all") {
+      return `No recipes found matching "${searchQuery}" in ${selectedCategory} category.`
     } else if (searchQuery) {
       return `No recipes found matching "${searchQuery}".`
-    } else if (categoryFilter !== "all") {
-      return `No recipes found in ${categoryFilter} category.`
+    } else if (selectedCategory !== "all") {
+      return `No recipes found in ${selectedCategory} category.`
     }
     return "No recipes yet. Add your first recipe!"
   }
 
   return (
     <div className="space-y-6">
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar
+        onSearch={handleSearch}
+        initialQuery={searchQuery}
+        initialCategory={selectedCategory}
+        key={`${searchQuery}-${selectedCategory}`} // Force re-render when URL changes
+      />
 
       {recipes.length === 0 ? (
         <div className="text-center py-8">
@@ -92,7 +114,7 @@ export default function RecipeList() {
           <div className="text-sm text-gray-600">
             {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} found
             {searchQuery && ` for "${searchQuery}"`}
-            {categoryFilter !== "all" && ` in ${categoryFilter} category`}
+            {selectedCategory !== "all" && ` in ${selectedCategory} category`}
           </div>
           <div className="grid gap-6">
             {recipes.map((recipe) => (

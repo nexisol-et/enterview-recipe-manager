@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -10,16 +9,21 @@ import { Search, X } from "lucide-react"
 
 interface SearchBarProps {
   onSearch: (query: string, category: string) => void
+  initialQuery?: string
+  initialCategory?: string
 }
 
-export default function SearchBar({ onSearch }: SearchBarProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+export default function SearchBar({ onSearch, initialQuery = "", initialCategory = "all" }: SearchBarProps) {
+  const [query, setQuery] = useState(initialQuery)
+  const [category, setCategory] = useState(initialCategory)
 
-  const [query, setQuery] = useState(searchParams.get("search") || "")
-  const [category, setCategory] = useState(searchParams.get("category") || "all")
+  // Update local state when initial values change (from URL)
+  useEffect(() => {
+    setQuery(initialQuery)
+    setCategory(initialCategory)
+  }, [initialQuery, initialCategory])
 
-  // Available categories - in a real app, this might come from an API
+  // Available categories
   const categories = [
     { value: "all", label: "All Categories" },
     { value: "Italian", label: "Italian" },
@@ -31,42 +35,20 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     { value: "Mediterranean", label: "Mediterranean" },
   ]
 
-  // Update URL parameters when search or category changes
-  const updateURL = (searchQuery: string, selectedCategory: string) => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set("search", searchQuery)
-    if (selectedCategory && selectedCategory !== "all") params.set("category", selectedCategory)
-
-    const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname
-    router.replace(newURL, { scroll: false })
-  }
-
-  // Initialize from URL parameters on component mount
-  useEffect(() => {
-    const urlQuery = searchParams.get("search") || ""
-    const urlCategory = searchParams.get("category") || "all"
-    setQuery(urlQuery)
-    setCategory(urlCategory)
-    onSearch(urlQuery, urlCategory)
-  }, [searchParams, onSearch])
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSearch(query, category)
-    updateURL(query, category)
   }
 
   const handleCategoryChange = (newCategory: string) => {
     setCategory(newCategory)
     onSearch(query, newCategory)
-    updateURL(query, newCategory)
   }
 
   const handleClear = () => {
     setQuery("")
     setCategory("all")
     onSearch("", "all")
-    updateURL("", "all")
   }
 
   const hasActiveFilters = query || category !== "all"
@@ -94,30 +76,26 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             </Button>
           )}
         </div>
+
+        <Select value={category} onValueChange={handleCategoryChange}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value}>
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Button type="submit">
           <Search className="w-4 h-4" />
         </Button>
       </form>
 
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <label htmlFor="category-select" className="text-sm font-medium text-gray-700">
-            Category:
-          </label>
-          <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger id="category-select" className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+      <div className="flex justify-end">
         {hasActiveFilters && (
           <Button variant="outline" size="sm" onClick={handleClear} className="flex items-center gap-2 bg-transparent">
             <X className="w-4 h-4" />
@@ -135,7 +113,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                 onClick={() => {
                   setQuery("")
                   onSearch("", category)
-                  updateURL("", category)
                 }}
                 className="ml-1 hover:bg-blue-200 rounded p-0.5"
               >
@@ -150,7 +127,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                 onClick={() => {
                   setCategory("all")
                   onSearch(query, "all")
-                  updateURL(query, "all")
                 }}
                 className="ml-1 hover:bg-green-200 rounded p-0.5"
               >
