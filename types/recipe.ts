@@ -8,6 +8,7 @@ export interface Recipe {
   servings: number
   difficulty: "Easy" | "Medium" | "Hard"
   category: string
+  rating?: number // 1-5 stars, optional
   createdAt: string
 }
 
@@ -20,4 +21,8 @@ export interface CreateRecipeRequest {
   servings: number
   difficulty: "Easy" | "Medium" | "Hard"
   category: string
+}
+
+export interface UpdateRatingRequest {
+  rating: number
 }

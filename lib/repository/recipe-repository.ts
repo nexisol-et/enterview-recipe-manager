@@ -26,6 +26,7 @@ const recipes: Recipe[] = [
     servings: 4,
     difficulty: "Medium",
     category: "Italian",
+    rating: 4.5,
     createdAt: "2024-01-15T10:00:00Z",
   },
   {
@@ -53,6 +54,7 @@ const recipes: Recipe[] = [
     servings: 3,
     difficulty: "Easy",
     category: "Asian",
+    rating: 4.2,
     createdAt: "2024-01-14T15:30:00Z",
   },
   {
@@ -82,6 +84,7 @@ const recipes: Recipe[] = [
     servings: 24,
     difficulty: "Easy",
     category: "Dessert",
+    rating: 4.8,
     createdAt: "2024-01-13T09:15:00Z",
   },
   {
@@ -112,6 +115,7 @@ const recipes: Recipe[] = [
     servings: 4,
     difficulty: "Easy",
     category: "Mexican",
+    rating: 3.9,
     createdAt: "2024-01-12T18:45:00Z",
   },
 ]
@@ -134,6 +138,7 @@ export class RecipeRepository {
     const newRecipe: Recipe = {
       id: Date.now().toString(),
       ...recipeData,
+      rating: 0, // Default rating
       createdAt: new Date().toISOString(),
     }
 
@@ -148,6 +153,16 @@ export class RecipeRepository {
     if (index === -1) return null
 
     recipes[index] = { ...recipes[index], ...recipeData }
+    return recipes[index]
+  }
+
+  static async updateRecipeRating(id: string, rating: number): Promise<Recipe | null> {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    const index = recipes.findIndex((recipe) => recipe.id === id)
+    if (index === -1) return null
+
+    recipes[index] = { ...recipes[index], rating }
     return recipes[index]
   }
 
