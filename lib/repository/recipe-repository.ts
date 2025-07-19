@@ -84,6 +84,36 @@ const recipes: Recipe[] = [
     category: "Dessert",
     createdAt: "2024-01-13T09:15:00Z",
   },
+  {
+    id: "4",
+    title: "Beef Tacos",
+    description: "Delicious Mexican-style beef tacos with fresh toppings",
+    ingredients: [
+      "1 lb ground beef",
+      "8 taco shells",
+      "1 onion, diced",
+      "2 cloves garlic",
+      "1 packet taco seasoning",
+      "Lettuce, shredded",
+      "Tomatoes, diced",
+      "Cheese, shredded",
+      "Sour cream",
+    ],
+    instructions: [
+      "Brown ground beef in a large skillet",
+      "Add onion and garlic, cook until soft",
+      "Add taco seasoning and water as directed",
+      "Simmer for 10 minutes",
+      "Warm taco shells",
+      "Fill shells with beef mixture",
+      "Top with lettuce, tomatoes, cheese, and sour cream",
+    ],
+    cookingTime: 20,
+    servings: 4,
+    difficulty: "Easy",
+    category: "Mexican",
+    createdAt: "2024-01-12T18:45:00Z",
+  },
 ]
 
 export class RecipeRepository {
@@ -131,16 +161,36 @@ export class RecipeRepository {
     return true
   }
 
-  static async searchRecipes(query: string): Promise<Recipe[]> {
+  static async searchRecipes(query: string, category = ""): Promise<Recipe[]> {
     await new Promise((resolve) => setTimeout(resolve, 150))
 
-    const lowercaseQuery = query.toLowerCase()
-    return recipes.filter(
-      (recipe) =>
-        recipe.title.toLowerCase().includes(lowercaseQuery) ||
-        recipe.description.toLowerCase().includes(lowercaseQuery) ||
-        recipe.category.toLowerCase().includes(lowercaseQuery) ||
-        recipe.ingredients.some((ingredient) => ingredient.toLowerCase().includes(lowercaseQuery)),
-    )
+    let filteredRecipes = [...recipes]
+
+    // Filter by category first
+    if (category && category !== "all") {
+      filteredRecipes = filteredRecipes.filter((recipe) => recipe.category.toLowerCase() === category.toLowerCase())
+    }
+
+    // Then filter by search query if provided
+    if (query) {
+      const lowercaseQuery = query.toLowerCase()
+      filteredRecipes = filteredRecipes.filter(
+        (recipe) =>
+          recipe.title.toLowerCase().includes(lowercaseQuery) ||
+          recipe.description.toLowerCase().includes(lowercaseQuery) ||
+          recipe.category.toLowerCase().includes(lowercaseQuery) ||
+          recipe.ingredients.some((ingredient) => ingredient.toLowerCase().includes(lowercaseQuery)),
+      )
+    }
+
+    // Sort by creation date (newest first)
+    return filteredRecipes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }
+
+  // Helper method to get all unique categories
+  static async getCategories(): Promise<string[]> {
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const categories = [...new Set(recipes.map((recipe) => recipe.category))]
+    return categories.sort()
   }
 }

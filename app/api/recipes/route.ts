@@ -6,10 +6,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
+    const category = searchParams.get("category")
 
     let recipes
-    if (search) {
-      recipes = await RecipeRepository.searchRecipes(search)
+    if (search || category) {
+      recipes = await RecipeRepository.searchRecipes(search || "", category || "")
     } else {
       recipes = await RecipeRepository.getAllRecipes()
     }
